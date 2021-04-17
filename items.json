@@ -1,0 +1,31 @@
+﻿{
+  "items": [
+    {
+      "productSku": "8349024",
+      "useProxy": false,
+      "interval": 60,
+      "locations": [
+        { "postcode": "IP215JD" }
+      ],
+      "webhooks": [
+        {
+          "url": "https://discord.com/api/webhooks/827690091811176478/vKQTRN9tFGK_2RD4mk3BicdBCoygM0twYtTRYzcKyxLrEpYHr0CdcDSwuDwILssIFXES"
+        }
+      ]
+    },
+    {
+      "productSku": "8349000",
+      "useProxy": false,
+      "interval": 60,
+      "locations": [
+        { "postcode": "IP215JD" }
+      ],
+      "webhooks": [
+        {
+          "url": "https://discord.com/api/webhooks/827690091811176478/vKQTRN9tFGK_2RD4mk3BicdBCoygM0twYtTRYzcKyxLrEpYHr0CdcDSwuDwILssIFXES"
+        }
+      ]
+    }
+  ]
+}
+  
