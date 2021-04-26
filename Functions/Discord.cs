@@ -1,38 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Discord;
 using Discord.Webhook;
-using Site_Monitor_Base.Models;
+using EBuyer_Monitor.Models;
 
-namespace Site_Monitor_Base.Functions
+namespace EBuyer_Monitor.Functions
 {
-    class Discord
+    internal class Discord
     {
-        public static async void NotifyDiscordAsync(MonitorTask monitorTask, int stock)
+        public static async void NotifyDiscordAsync(MonitorTask monitorTask, string price)
         {
             var embed = new EmbedBuilder();
 
-            var embeds = new List<Embed>();
-
-            var message = "";
-
-            embeds.Add(embed
-                .WithAuthor("Restock Detected!")
-                .WithFooter("RYXX Monitors | @ryxxuk")
-                .WithColor(Color.Blue)
-                .WithTitle(monitorTask.Product.ItemName)
-                .WithFields(new EmbedFieldBuilder
-                {
-                    Name = "Available at:",
-                    Value = message
-                })
-                .WithCurrentTimestamp()
-                .WithThumbnailUrl(
-                    $"https://media.4rgos.it/s/Argos/{monitorTask.Product.ProductSku}_R_SET?$Main768$&amp;w=620&amp;h=620")
-                .WithUrl("https://www.argos.co.uk/product/" + monitorTask.Product.ProductSku)
-                .Build());
-
+            var embeds = new List<Embed>
+            {
+                embed
+                    .WithAuthor("https://www.ebuyer.com/ - Restock Detected!")
+                    .WithFooter("RYXX Monitors | @ryxxuk")
+                    .WithColor(Color.Blue)
+                    .WithTitle(monitorTask.Product.ItemName)
+                    .WithFields(new EmbedFieldBuilder
+                    {
+                        Name = "Price",
+                        Value = price
+                    })
+                    .WithCurrentTimestamp()
+                    .WithThumbnailUrl(monitorTask.Product.Image)
+                    .WithUrl("https://www.ebuyer.com/" + monitorTask.Product.ProductSku)
+                    .Build()
+            };
 
             foreach (var client in monitorTask.Webhooks.Select(webhook => new DiscordWebhookClient(webhook)))
             {

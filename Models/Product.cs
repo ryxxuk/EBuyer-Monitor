@@ -1,11 +1,10 @@
-﻿namespace Site_Monitor_Base.Models
+﻿namespace EBuyer_Monitor.Models
 {
-    internal class Product
+    public class Product
     {
         public string ProductSku { get; set; }
         public string ItemName { get; set; }
         public bool InStock { get; set; }
         public string Image { get; set; }
-        public double Price { get; set; }
     }
 }

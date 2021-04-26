@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using EBuyer_Monitor.Functions;
+using EBuyer_Monitor.Models;
 using Newtonsoft.Json.Linq;
-using Site_Monitor_Base.Functions;
-using Site_Monitor_Base.Models;
+using Monitor = EBuyer_Monitor.Functions.Monitor;
 
 namespace Site_Monitor_Base
 {
@@ -18,36 +19,34 @@ namespace Site_Monitor_Base
             Console.ReadLine();
         }
 
-        private async Task Start()
+        private async void Start()
         {
             var itemsToBeMonitored = await GetAllItemsToBeMonitored();
 
-            foreach (var item in itemsToBeMonitored)
+            foreach (var task in itemsToBeMonitored)
             {
-                LoggingService.WriteLine($"Starting new task! {task} [{(task. ? "USING PROXY" : "NOT USING PROXY")}]");
+                LoggingService.WriteLine($"Starting new task! {task.Product.ProductSku}");
                 StartMonitorTask(task);
                 LoggingService.WriteLine($"Sleeping 3 seconds!");
-                Thread.Sleep(3 * 1000);
+                Thread.Sleep(3123);
             }
         }
 
         private async Task<List<MonitorTask>> GetAllItemsToBeMonitored()
         {
-            var itemsToBeMonitored = new List<Product>();
+            var itemsToBeMonitored = new List<MonitorTask>();
 
             dynamic responseObject = JObject.Parse(FormatJson(await File.ReadAllTextAsync(Directory.GetCurrentDirectory() + @"\items.json")));
 
             for (var i = 0; i < responseObject.items.Count; i++)
             {
-                var item = new Item
+                Product product = await EBuyer.GetProductDetails(responseObject.items[i].productSku.ToString());
+
+                var task = new MonitorTask
                 {
-                    ProductSku = responseObject.items[i].productSku,
+                    Product = product,
                     Interval = responseObject.items[i].interval * 1000,
-                    UseProxy = responseObject.items[i].useProxy,
-                    ImageUrl = responseObject.items[i].image,
-                    Price = responseObject.items[i].price,
-                    Name = responseObject.items[i].name,
-                    InStock = false
+                    UseProxy = responseObject.items[i].useProxy
                 };
 
                 var webhooks = new List<string>();
@@ -57,18 +56,25 @@ namespace Site_Monitor_Base
                     webhooks.Add(responseObject.items[i].webhooks[w].url.ToString());
                 }
 
-                item.Webhooks = webhooks;
+                task.Webhooks = webhooks;
 
-                itemsToBeMonitored.Add(item);
+                if (task.UseProxy)
+                {
+                    task.Proxy = Proxy.GetNewProxy();
+                }
+
+                itemsToBeMonitored.Add(task);
+
+                LoggingService.WriteLine($"Added {task.Product.ProductSku} to starting queue!");
             }
 
             return itemsToBeMonitored;
         }
 
-        public void StartMonitorTask(Item item)
+        public void StartMonitorTask(MonitorTask task)
         {
-            LoggingService.WriteLine($"Starting task for {item.Name}!");
-            Task.Run(() => MonitorTask(item));
+            LoggingService.WriteLine($"Starting task for {task.Product.ItemName}!");
+            Task.Run(() => MonitorTask(task));
         }
 
         private static string FormatJson(string json)
@@ -86,9 +92,14 @@ namespace Site_Monitor_Base
             {
                 while (true)
                 {
-                    var response = await Functions.Monitor.MonitorProduct(task);
+                    var response = await Monitor.MonitorProduct(task.Product, task.Proxy);
 
-                    if (response > 0)
+                    if (response is null)
+                    {
+                        LoggingService.WriteLine($"{task.Product.ItemName} #OUTOFSTOCK");
+                        task.Product.InStock = false;
+                    }
+                    else
                     {
                         if (!task.Product.InStock)
                         {
@@ -96,7 +107,7 @@ namespace Site_Monitor_Base
 
                             LoggingService.WriteLine($"{task.Product.ItemName} #INSTOCK NOTIFIYING DISCORD");
 
-                            Functions.Discord.NotifyDiscordAsync(task, response);
+                            EBuyer_Monitor.Functions.Discord.NotifyDiscordAsync(task, response);
                         }
                         else
                         {
@@ -104,11 +115,6 @@ namespace Site_Monitor_Base
                         }
 
                         task.Product.InStock = true;
-                    }
-                    else
-                    {
-                        LoggingService.WriteLine($"{task.Product.ItemName} #OUTOFSTOCK");
-                        task.Product.InStock = false;
                     }
 
                     Globals.RequestNum++;
@@ -128,7 +134,7 @@ namespace Site_Monitor_Base
         }
         public void UpdateTitle()
         {
-            Console.Title = $"[SITE] Requests: {Globals.RequestNum} | Pings: {Globals.DiscordPings} | Errors: {Globals.Errors}";
+            Console.Title = $"[EBUYER] Requests: {Globals.RequestNum} | Pings: {Globals.DiscordPings} | Errors: {Globals.Errors}";
         }
     }
 }

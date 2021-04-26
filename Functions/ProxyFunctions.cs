@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
-using Site_Monitor_Base.Models;
+using EBuyer_Monitor.Models;
 
-namespace Site_Monitor_Base.Functions
+namespace EBuyer_Monitor.Functions
 {
-    class ProxyFunctions
+    internal class Proxy
     {
-        public WebProxy GetNewProxy()
+        public static WebProxy GetNewProxy()
         {
             if (Globals.Proxies.Count is 0)
             {
@@ -22,40 +21,31 @@ namespace Site_Monitor_Base.Functions
 
                     try
                     {
-                        Globals.Proxies.Add(Parse(split[0], split[1], split[2], split[3]), 0);
+                        Globals.Proxies?.Add(split.Length == 4
+                            ? Parse(split[0], split[1], split[2], split[3])
+                            : Parse(split[0], split[1], null, null));
+
                     }
                     catch
                     {
-                        try
-                        {
-                            Globals.Proxies.Add(Parse(split[0], split[1], null, null), 0);
-                        }
-                        catch
-                        {
-                            // do nothing
-                        }
+                        // do nothing
                     }
                 }
 
                 if (!Globals.Proxies.Any()) throw new Exception("No proxies in proxy file!");
             }
 
-            var random = new Random();
-            var randomIndex = random.Next(Globals.Proxies.Count);
+            if (Globals.ProxyNum > Globals.Proxies.Count - 1) Globals.ProxyNum = 0;
 
-            KeyValuePair<WebProxy, int> randomProxy;
+            var randomProxy = Globals.Proxies.ElementAt(Globals.ProxyNum);
 
-            do
-            {
-                randomProxy = _proxies.ElementAt(randomIndex); // could get infinite loop here
-            } while (randomProxy.Value > 4);
+            LoggingService.WriteLine($"Trying following proxy: {Globals.ProxyNum}");
+            Globals.ProxyNum++;
 
-            LoggingService.WriteLine($"Trying following proxy: {randomIndex}");
-
-            _proxies[randomProxy.Key]++;
-
-            return randomProxy.Key;
+            return randomProxy;
         }
+
+
         public static WebProxy Parse(string hostname, string port, string username, string password)
         {
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;

@@ -1,39 +1,30 @@
 ﻿using System;
+using System.ComponentModel.Design;
+using System.Net;
+using System.Net.WebSockets;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Site_Monitor_Base.Models;
+using EBuyer_Monitor.Models;
 
-namespace Site_Monitor_Base.Functions
+namespace EBuyer_Monitor.Functions
 {
     public class Monitor
     {
-        public static async Task<int> MonitorProduct(MonitorTask item)
+        public static async Task<string> MonitorProduct(Product item, WebProxy proxy = null)
         {
-            var response = await Site.GetAvailability(item.ProductSku);
+            var response = await EBuyer.GetResponse(item.ProductSku, proxy);
 
-            response = response.Replace(@"\", string.Empty);
+            if (!response.Contains("https://schema.org/InStock")) return null;
 
-            var inStockRegex = new Regex("isInStock\":(.*)}");
+            response = response.Replace(Environment.NewLine, string.Empty);
 
-            var stockMatches = inStockRegex.Matches(response);
+            var priceRegex = new Regex("price\\\": \\\"(.*?)\\\",");
 
-            var inStock = Convert.ToBoolean(stockMatches[0].Groups[1].Value);
+            var priceMatches = priceRegex.Matches(response);
 
-            var comingSoonRegex = new Regex("showCommingSoonBanner\":(.*?),");
+            var price = priceMatches[0].Groups[1].Value;
 
-            var comingSoonMatches = comingSoonRegex.Matches(response);
-
-            var comingSoon = Convert.ToBoolean(comingSoonMatches[0].Groups[1].Value);
-
-            if (!inStock || comingSoon) return 0;
-
-            var stockCountRegex = new Regex("data-stock-level=\"(.*?)\"");
-
-            var stockCountMatches = stockCountRegex.Matches(response);
-
-            var stockCount = Convert.ToInt32(stockCountMatches[0].Groups[1].Value);
-
-            return stockCount <= 2 ? 0 : stockCount;
+            return price;
         }
     }
 }

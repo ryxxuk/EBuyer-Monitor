@@ -1,4 +1,4 @@
-﻿namespace Site_Monitor_Base.Models
+﻿namespace EBuyer_Monitor.Models
 {
     class MonitorResult
     {

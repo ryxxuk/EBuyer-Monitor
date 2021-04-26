@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Site_Monitor_Base.Functions
+namespace EBuyer_Monitor.Functions
 {
     public class LoggingService
     {
@@ -33,7 +33,14 @@ namespace Site_Monitor_Base.Functions
 
         public static void WriteLine(string str)
         {
+            Console.Write($"[{DateTime.Now}] ");
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
+            Console.Write("[EBUYER] ");
+            Console.ResetColor();
+
             Console.WriteLine(str);
+
+            str = $"[{DateTime.Now}] [EBUYER] {str}";
             outputToFileSingleton.sw.WriteLine("\n" + str);
         }
 
